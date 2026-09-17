@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>현공풍수 실시간 나경 & 비성반 계산기</title>
+  <style>
+    :root {
+      --bg-main: #0b1114;
+      --bg-panel: #111a1f;
+      --bg-card: #152229;
+      --bg-card-sub: #1a2a32;
+      --border-color: #21353f;
+      --border-light: #2c4451;
+      --teal-primary: #1ec997;
+      --teal-dim: #158b68;
+      --teal-glow: rgba(30, 201, 151, 0.25);
+      --amber-accent: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.25);
+      --red-accent: #ef4444;
+      --text-main: #e2e8f0;
+      --text-muted: #8fa6b6;
+      --text-dim: #5a7483;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* 상단 헤더 */
+    header {
+      background-color: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      color: var(--teal-primary);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title span.sub {
+      color: var(--text-muted);
+      font-weight: 400;
+      font-size: 12px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sensor-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-dim);
+    }
+    .status-dot.active {
+      background: var(--teal-primary);
+      box-shadow: 0 0 8px var(--teal-primary);
+    }
+    .status-dot.gps {
+      background: #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
+    }
+
+    .btn-guide-trigger {
+      background: rgba(30, 201, 151, 0.12);
+      color: var(--teal-primary);
+      border: 1px solid var(--teal-dim);
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-guide-trigger:hover {
+      background: var(--teal-primary);
+      color: #0b1114;
+      box-shadow: 0 0 10px var(--teal-glow);
+    }
+
+    /* 메인 컨테이너 */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      padding: 16px;
+      max-width: 1320px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+    }
+
+    @media (min-width: 900px) {
+      .main-layout {
+        grid-template-columns: 460px 1fr;
+      }
+    }
+
+    /* 좌측: 나경 컴퍼스 패널 */
+    .left-panel {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .period-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+    }
+
+    .period-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .period-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* 나경 컴퍼스 시각화 */
+    .compass-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      max-width: 380px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .compass-pointer {
+      position: absolute;
+      top: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 15px solid var(--amber-accent);
+      z-index: 10;
+      filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.7));
+    }
+
+    .compass-dial-svg {
+      width: 100%;
+      height: 100%;
+      transition: transform 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+      will-change: transform;
+      user-select: none;
+    }
+
+    .compass-center-hub {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 116px;
+      height: 116px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #192931 0%, #0d1519 100%);
+      border: 2px solid var(--teal-dim);
+      box-shadow: 0 0 22px rgba(0, 0, 0, 0.85), inset 0 0 12px rgba(30, 201, 151, 0.2);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .hub-degree {
+      font-size: 28px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1;
+      font-family: monospace;
+    }
+
+    .hub-label {
+      font-size: 10px;
+      color: var(--teal-primary);
+      margin-top: 4px;
+      letter-spacing: 0.3px;
+      font-weight: 600;
+    }
+
+    /* 좌산 - 향 정보 카드 */
+    .mountain-facing-box {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .mf-item {
+      text-align: center;
+    }
+
+    .mf-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+    }
+
+    .mf-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .mf-divider {
+      font-size: 12px;
+      color: var(--teal-primary);
+      font-weight: 700;
+      padding: 4px 10px;
+      background: rgba(30, 201, 151, 0.12);
+      border-radius: 6px;
+    }
+
+    /* 버튼 컨트롤 */
+    .control-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      outline: none;
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-teal {
+      background: var(--teal-primary);
+      color: #0b1114;
+    }
+    .btn-teal:hover {
+      background: #25dfa8;
+      box-shadow: 0 0 12px var(--teal-glow);
+    }
+
+    .btn-dark {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+    .btn-dark:hover {
+      background: var(--bg-card-sub);
+      border-color: var(--border-light);
+    }
+
+    .btn-block {
+      grid-column: 1 / -1;
+    }
+
+    .btn.active {
+      background: var(--amber-accent);
+      color: #0b1114;
+      border-color: var(--amber-accent);
+    }
+
+    .info-footer-note {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* 우측 패널: 설정 및 3x3 비성반 */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .config-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .config-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .config-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .tabs-group {
+      display: inline-flex;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--teal-primary);
+      color: #0b1114;
+      font-weight: 700;
+    }
+
+    /* 슬라이더 */
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-card);
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .slider-range {
+      flex: 1;
+      accent-color: var(--teal-primary);
+      cursor: pointer;
+    }
+
+    .slider-val {
+      font-size: 14px;
+      font-family: monospace;
+      font-weight: 700;
+      color: var(--teal-primary);
+      min-width: 52px;
+      text-align: right;
+    }
+
+    /* 3x3 비성반 구궁도 */
+    .chart-container {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chart-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-subtitle {
+      font-size: 12px;
+      color: var(--teal-primary);
+      font-weight: 500;
+    }
+
+    /* 9궁도 3x3 그리드 */
+    .nine-palace-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: 100%;
+      aspect-ratio: 1 / 0.9;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    .palace-cell {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 8px 6px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .palace-cell:hover {
+      border-color: var(--teal-dim);
+      background: var(--bg-card-sub);
+    }
+
+    .palace-cell.highlight-facing {
+      border: 1.5px solid var(--amber-accent);
+      box-shadow: inset 0 0 14px rgba(245, 158, 11, 0.12);
+    }
+
+    .star-pair-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      width: 100%;
+    }
+
+    .mountain-star, .facing-star {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1;
+      font-family: monospace;
+    }
+
+    .period-star {
+      font-size: 38px;
+      font-weight: 900;
+      color: #cbd5e1;
+      text-align: center;
+      line-height: 1.1;
+      user-select: none;
+    }
+
+    .period-star.king-star {
+      color: #ffffff;
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+    }
+
+    .palace-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 4px;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .facing-badge {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      padding: 1px 6px;
+      height: 18px;
+      background: var(--amber-accent);
+      color: #000;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+    }
+
+    /* 하단 비법 카드 */
+    .fly-logic-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .fly-logic-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .fly-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .fly-title {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .fly-entry {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .fly-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* 상시 노출 풍수 기초 요약 카드 */
+    .quick-guide-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .quick-guide-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--teal-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .quick-guide-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+
+    .quick-item {
+      background: var(--bg-card);
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .quick-item strong {
+      display: block;
+      font-size: 12px;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .quick-item p {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .gps-telemetry {
+      font-size: 11px;
+      color: var(--text-dim);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .gps-item span {
+      color: var(--text-muted);
+      font-family: monospace;
+      font-weight: 600;
+    }
+
+    /* =========================================================================
+       모달 레이어: 사용법 & 풍수 설명 가이드
+       ========================================================================= */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(4, 8, 10, 0.85);
+      backdrop-filter: blur(5px);
+      z-index: 100;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-window {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 820px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      animation: modalSlideUp 0.3s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+    }
+
+    .modal-header h2 {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-close-modal {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .btn-close-modal:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* 모달 탭 메뉴 */
+    .modal-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-main);
+      padding: 0 16px;
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .modal-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 12px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .modal-tab-btn.active {
+      color: var(--teal-primary);
+      border-bottom-color: var(--teal-primary);
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .guide-section h3 {
+      font-size: 15px;
+      color: var(--teal-primary);
+      margin-bottom: 8px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .guide-section p {
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .step-badge {
+      background: var(--teal-primary);
+      color: #0b1114;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 800;
+    }
+
+    .callout-box {
+      background: rgba(245, 158, 11, 0.1);
+      border-left: 3px solid var(--amber-accent);
+      padding: 12px 14px;
+      border-radius: 0 8px 8px 0;
+      font-size: 12px;
+      color: #fde68a;
+      line-height: 1.6;
+    }
+
+    .table-guide {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .table-guide th, .table-guide td {
+      border: 1px solid var(--border-color);
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .table-guide th {
+      background: var(--bg-card);
+      color: var(--teal-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 상단 헤더 -->
+  <header>
+    <div class="brand-title">
+      현공풍수 나경 & 비성반 <span class="sub">· 3x3 구궁 실시간 택반 (정향하괘)</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-guide-trigger" id="btnOpenGuide">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        사용법 & 설명 가이드
+      </button>
+      <div class="sensor-status-badge" id="sensorBadge">
+        <span class="status-dot" id="sensorDot"></span>
+        <span id="sensorStatusText">센서 대기 (수동 모드)</span>
+      </div>
+      <div class="sensor-status-badge" id="gpsBadge">
+        <span class="status-dot gps" id="gpsDot"></span>
+        <span id="gpsStatusText">GPS 대기</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-layout">
+    
+    <!-- 좌측: 24산 나경(나침반) 영역 -->
+    <section class="left-panel">
+      
+      <div class="period-banner">
+        <div class="period-title">
+          <span id="bannerPeriodText">제9운</span>
+          <span style="font-size: 13px; color: var(--teal-primary); font-weight: 600;">하원(下元)</span>
+        </div>
+        <div class="period-sub" id="bannerPeriodYears">2024년 ~ 2043년</div>
+      </div>
+
+      <!-- 나경 원반 시각화 -->
+      <div class="compass-container">
+        <div class="compass-pointer"></div>
+
+        <!-- 24산 회전 SVG 다이얼 -->
+        <svg id="compassSvg" class="compass-dial-svg" viewBox="-200 -200 400 400">
+          <defs>
+            <radialGradient id="compassBgGrad" cx="0" cy="0" r="200" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#0a1215" />
+              <stop offset="70%" stop-color="#121e24" />
+              <stop offset="100%" stop-color="#182c35" />
+            </radialGradient>
+          </defs>
+
+          <!-- 나침반 배경 원 -->
+          <circle cx="0" cy="0" r="195" fill="url(#compassBgGrad)" stroke="#263e4b" stroke-width="2" />
+          <circle cx="0" cy="0" r="165" fill="#0d171c" stroke="#1c303a" stroke-width="1.5" />
+          <circle cx="0" cy="0" r="115" fill="#091013" stroke="#213a47" stroke-width="1" />
+
+          <!-- 눈금 및 24산 글자 -->
+          <g id="dialTicks"></g>
+          <g id="dialLabels"></g>
+        </svg>
+
+        <!-- 정중앙 각도 허브 -->
+        <div class="compass-center-hub">
+          <div class="hub-degree"><span id="centerDegree">66</span>°</div>
+          <div class="hub-label">기기 상단 = 향(向)</div>
+        </div>
+      </div>
+
+      <!-- 좌산 - 향 정보 카드 -->
+      <div class="mountain-facing-box">
+        <div class="mf-item">
+          <div class="mf-label">좌산(坐山) · 등진 쪽</div>
+          <div class="mf-val" id="sittingMountainText">술(戌)</div>
+        </div>
+        <div class="mf-divider">좌(坐) ── 향(向)</div>
+        <div class="mf-item">
+          <div class="mf-label">향수(向首) · 바라보는 쪽</div>
+          <div class="mf-val" id="facingMountainText" style="color: var(--amber-accent);">진(辰)</div>
+        </div>
+      </div>
+
+      <!-- 제어 버튼들 -->
+      <div class="control-actions">
+        <button class="btn btn-teal" id="btnToggleSensor">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+          <span id="btnSensorLabel">나침반 센서 활성화</span>
+        </button>
+
+        <button class="btn btn-dark" id="btnSwapSittingFacing">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"/></svg>
+          좌향 맞바꾸기
+        </button>
+
+        <button class="btn btn-dark btn-block" id="btnLockAngle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span id="lockBtnText">현재 각도 고정</span>
+        </button>
+      </div>
+
+      <!-- GPS 실시간 위치 정보 -->
+      <div class="gps-telemetry" id="gpsTelemetry">
+        <div class="gps-item">위도: <span id="gpsLat">-</span></div>
+        <div class="gps-item">경도: <span id="gpsLng">-</span></div>
+        <div class="gps-item">오차: <span id="gpsAcc">-</span></div>
+      </div>
+
+      <div class="info-footer-note">
+        ※ 모바일 기기에서 정북(0°) 기준 실시간 자이로 나경 감측을 지원합니다.
+      </div>
+
+    </section>
+
+    <!-- 우측: 설정 및 3x3 비성반 -->
+    <section class="right-panel">
+
+      <!-- 환경 제어 카드 -->
+      <div class="config-card">
+        
+        <div class="config-row">
+          <div class="config-label">택운 시기 (삼원구운)</div>
+          <div class="tabs-group" id="periodTabs">
+            <button class="tab-btn" data-period="7">7운 (1984~2003)</button>
+            <button class="tab-btn" data-period="8">8운 (2004~2023)</button>
+            <button class="tab-btn active" data-period="9">9운 (2024~2043)</button>
+          </div>
+        </div>
+
+        <div class="config-row">
+          <div class="config-label">측정 대상 및 격국</div>
+          <div style="font-size: 12px; color: var(--text-muted);">
+            건물 내부 (택반 생성) · 정향하괘(정규 괘)
+          </div>
+        </div>
+
+        <!-- 수동 각도 조절 슬라이더 -->
+        <div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span class="config-label">수동 방위 미세조정</span>
+            <span style="font-size: 11px; color: var(--text-dim);">정북 0° ~ 360°</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" class="slider-range" id="angleSlider" min="0" max="359.9" step="0.5" value="66">
+            <div class="slider-val" id="sliderValDisplay">66.0°</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 3x3 비성반 구궁도 카드 -->
+      <div class="chart-container">
+        
+        <div class="chart-header">
+          <div class="chart-title">
+            <span>3×3 실시간 비성반</span>
+            <span style="font-size: 13px; color: var(--teal-primary); font-weight: 600;" id="chartSummarySubtitle">
+              술산진향(戌山辰向) · 제9운 · 정향하괘
+            </span>
+          </div>
+          <div class="chart-subtitle">
+            좌측: 산성(인물/건강) · 우측: 향성(재물/기회) · 중앙: 운성(시대기운)
+          </div>
+        </div>
+
+        <!-- 9궁 3x3 그리드 -->
+        <div class="nine-palace-grid" id="ninePalaceGrid"></div>
+
+        <!-- 하단: 산성/향성 비법 계산 원리 설명 카드 -->
+        <div class="fly-logic-cards">
+          <div class="fly-card">
+            <div class="fly-title">산성 비법 (건강/인물 기운 산출)</div>
+            <div class="fly-entry" id="mountainFlyTitle">1 입궁 · 순비(순방향)</div>
+            <div class="fly-desc" id="mountainFlyDesc">
+              좌산 술(戌): 운반에서 1을 취함; 지원룡에서 임(壬, 양)을 취하므로 원래 별 그대로 순비(순방향) 배치합니다.
+            </div>
+          </div>
+
+          <div class="fly-card">
+            <div class="fly-title">향성 비법 (재물/사업 기운 산출)</div>
+            <div class="fly-entry" id="facingFlyTitle">8 입궁 · 역비(역방향)</div>
+            <div class="fly-desc" id="facingFlyDesc">
+              향수 진(辰): 운반에서 8을 취함; 지원룡에서 축(丑, 음)을 취하므로 원래 별 그대로 역비(역방향) 배치합니다.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 상시 노출 빠른 가이드 카드 -->
+      <div class="quick-guide-card">
+        <div class="quick-guide-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          풍수 비성반 3대 숫자 한눈에 보기
+        </div>
+        <div class="quick-guide-grid">
+          <div class="quick-item">
+            <strong>좌측 숫자: 산성(山星)</strong>
+            <p><strong>건강운 · 인복 · 가족 평안</strong>을 주관합니다. 침실, 안방, 서재를 두기에 좋은 길성 방위를 찾을 때 봅니다.</p>
+          </div>
+          <div class="quick-item">
+            <strong>우측 숫자: 향성(向星)</strong>
+            <p><strong>재물운 · 사업운 · 기회</strong>를 주관합니다. 현관문, 거실 베란다, 주 출입구를 배치할 핵심 길성 방위입니다.</p>
+          </div>
+          <div class="quick-item">
+            <strong>중앙 큰 숫자: 운성(運星)</strong>
+            <p>20년간 지속되는 <strong>시대의 기본 에너지</strong>입니다. 현재 제9운(2024~2043)에서는 <strong>'9'</strong>가 가장 왕성한 길성입니다.</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       모달 레이어: 사용법 & 설명 가이드 상세 팝업
+       ========================================================================= -->
+  <div class="modal-backdrop" id="guideModal">
+    <div class="modal-window">
+      
+      <div class="modal-header">
+        <h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          현공풍수 나경 & 비성반 사용 가이드
+        </h2>
+        <button class="btn-close-modal" id="btnCloseGuide" title="닫기 (ESC)">✕</button>
+      </div>
+
+      <nav class="modal-nav">
+        <button class="modal-tab-btn active" data-tab="tab-flow">1. 측정 & 사용 방법</button>
+        <button class="modal-tab-btn" data-tab="tab-chart">2. 비성반 숫자 보는 법</button>
+        <button class="modal-tab-btn" data-tab="tab-period9">3. 제9운과 길흉 격국</button>
+        <button class="modal-tab-btn" data-tab="tab-sensor">4. 센서 & GPS 연동 팁</button>
+      </nav>
+
+      <div class="modal-body">
+        
+        <!-- 탭 1: 측정 & 사용 방법 -->
+        <div class="tab-content" id="tab-flow">
+          <div class="guide-section">
+            <h3>📱 실전 현장 측정 5단계 순서</h3>
+            <p>현공풍수는 건물이 바라보는 정확한 각도(향, 向)와 지어진 시대(운, 運)를 기준으로 집 안 공간의 길흉을 판정합니다.</p>
+            
+            <div class="step-card">
+              <div class="step-header"><span class="step-badge">1단계</span> 건물 완공/입택 시기(운기) 선택</div>
+              <p>우측 상단 <strong>[택운 시기]</strong>에서 건물이 완공되었거나 리모델링하여 새로 입주한 연도 주기를 선택합니다.<br>
+              • <strong>제9운</strong>: 2024년 2월 4일 이후 신축 또는 입주<br>
+              • <strong>제8운</strong>: 2004년 ~ 2024년 2월 3일 사이 신축/입주</p>
+            </div>
+
+            <div class="step-card">
+              <div class="step-header"><span class="step-badge">2단계</span> 측정 위치 잡기 (중심점 또는 거실 통창)</div>
+              <p>집안의 정중앙이나 가장 기운이 크게 드나드는 거실 발코니(통창) 앞에서 측정합니다. 대형 가전제품(냉장고, TV)이나 철제 기둥은 나침반 센서에 자기장 간섭을 주므로 <strong>최소 1.5m 이상 떨어져서</strong> 측정하세요.</p>
+            </div>
+
+            <div class="step-card">
+              <div class="step-header"><span class="step-badge">3단계</span> 나침반 센서 활성화 및 향(向) 겨냥</div>
+              <p><strong>[나침반 센서 활성화]</strong> 버튼을 누르고 브라우저의 권한을 허용합니다. 스마트폰을 수평으로 들고 상단을 <strong>건물이 바라보는 앞쪽(가장 채광이 좋고 트인 창문이나 주 출입문 방향)</strong>으로 똑바로 향합니다.</p>
+            </div>
+
+            <div class="step-card">
+              <div class="step-header"><span class="step-badge">4단계</span> 각도 고정 및 좌향 판정</div>
+              <p>나침반 수치가 흔들리지 않고 안정되면 <strong>[현재 각도 고정]</strong> 버튼을 누릅니다.<br>
+              예컨대 각도가 66°로 측정되면 <strong>'술산진향(戌山辰向)'</strong>(뒤가 서북쪽 戌, 앞이 동남쪽 辰)으로 자동 확정됩니다.</p>
+            </div>
+
+            <div class="step-card">
+              <div class="step-header"><span class="step-badge">5단계</span> 3×3 구궁 비성반으로 가구/방 배치</div>
+              <p>우측의 3×3 구궁도를 보고 재물성(우측 숫자)이 좋은 방위에는 거실, 현관, 집무 공간을 두고, 인물/건강성(좌측 숫자)이 좋은 방위에는 침실이나 서재를 배치합니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 탭 2: 비성반 숫자 보는 법 -->
+        <div class="tab-content" id="tab-chart" style="display: none;">
+          <div class="guide-section">
+            <h3>🧭 3×3 구궁 비성반(飛星盤)의 구조</h3>
+            <p>풍수 비성반은 전통 방위 배치에 따라 <strong>위쪽이 남쪽(南), 아래쪽이 북쪽(北), 좌측이 동쪽(東), 우측이 서쪽(西)</strong>입니다. 각 칸은 집안의 8방위와 중앙을 뜻합니다.</p>
+
+            <div class="callout-box">
+              <strong>칸 안의 숫자 구조:</strong><br>
+              [좌측 숫자: <strong>산성(山星)</strong>] [우측 숫자: <strong>향성(向星)</strong>]<br>
+              [가운데 큰 숫자: <strong>운성(運星)</strong>]
+            </div>
+
+            <table class="table-guide">
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>상징하는 기운</th>
+                  <th>공간 활용 추천</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>산성 (좌측)</strong><br><span style="font-size:11px; color:var(--text-muted);">山管人丁</span></td>
+                  <td>거주자의 <strong>건강, 체력, 인복, 귀인운, 가족 간 화목</strong>을 주관합니다.</td>
+                  <td>길한 숫자(9, 1)가 있는 방위에 <strong>침대 머리 방향, 안방, 공부방 책상</strong>을 배치하면 건강과 집중력에 좋습니다.</td>
+                </tr>
+                <tr>
+                  <td><strong>향성 (우측)</strong><br><span style="font-size:11px; color:var(--text-muted);">水管財祿</span></td>
+                  <td><strong>재물운, 수입 증대, 사업 번창, 현금 흐름, 비즈니스 기회</strong>를 주관합니다.</td>
+                  <td>길한 숫자(9, 1)가 있는 방위에 <strong>현관문, 거실 메인 창, 사무실 출입문, 어항/정수기(물)</strong>를 배치하면 큰 번창을 부릅니다.</td>
+                </tr>
+                <tr>
+                  <td><strong>운성 (중앙)</strong></td>
+                  <td>20년 주기로 흘러가는 <strong>시대의 기본 바탕 에너지</strong>입니다.</td>
+                  <td>현재 9운(2024~2043) 시대이므로 중궁에 9가 위치하며, 9가 들어간 궁이 가장 활성화됩니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 탭 3: 제9운과 길흉 격국 -->
+        <div class="tab-content" id="tab-period9" style="display: none;">
+          <div class="guide-section">
+            <h3>🔥 제9운(2024~2043) 시대의 최고 길성과 흉성</h3>
+            <p>동양 풍수학의 3원9운 체계에서 지금은 <strong>'하원 제9운'</strong>(화·불의 시대)입니다.</p>
+
+            <table class="table-guide">
+              <thead>
+                <tr>
+                  <th>숫자 / 성수</th>
+                  <th>운기 분류</th>
+                  <th>풍수적 의미 및 처방</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong style="color:var(--amber-accent);">9 (구자화성)</strong></td>
+                  <td><strong>당왕성 (當旺星)</strong><br>최고의 대길성</td>
+                  <td>지금 시대에 가장 왕성한 길기운입니다. 산성 9나 향성 9가 있는 방위는 최고의 행운처입니다.</td>
+                </tr>
+                <tr>
+                  <td><strong style="color:var(--teal-primary);">1 (일백수성)</strong></td>
+                  <td><strong>생기성 (生氣星)</strong><br>다가오는 길성</td>
+                  <td>다음 시대(1운)를 열어주는 번창의 길성입니다. 지혜, 학업, 승진, 귀인을 돕습니다.</td>
+                </tr>
+                <tr>
+                  <td><strong>8 (팔백토성)</strong></td>
+                  <td>퇴기성 (退氣星)</td>
+                  <td>지난 8운(2004~2023)의 왕성이었으나 지금은 기운이 물러나는 상태로 무난한 평성입니다.</td>
+                </tr>
+                <tr>
+                  <td><strong style="color:var(--red-accent);">2 (이흑) & 5 (오황)</strong></td>
+                  <td><strong>살기 / 질병 흉성</strong></td>
+                  <td>질병, 사고, 손재수를 부르는 흉성입니다. 이 숫자가 몰린 방위는 어둡지 않게 정돈하고 시끄러운 활동을 피합니다.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3 style="margin-top:16px;">🏛️ 4대 대표 격국(格局) 해석</h3>
+            <p>• <strong>쌍성도향 (雙星到向)</strong>: 가장 길한 9번 별이 산성과 향성 모두 건물의 앞쪽(향궁)에 모인 형태입니다. (현재 화면의 <strong>술산진향</strong>이 바로 동남쪽 손궁에 9 9가 모인 쌍성도향입니다!) 앞이 트여있고 도로/물이 있으면 재물과 건강을 함께 크게 얻습니다.<br>
+            • <strong>왕산왕향 (旺山旺向)</strong>: 뒤(좌)에는 산성 9, 앞(향)에는 향성 9가 각각 제자리에 배치된 배산임수의 정석 대길격입니다.<br>
+            • <strong>쌍성도좌 (雙星到坐)</strong>: 길성이 모두 건물 뒤편(좌궁)에 모여 있어 뒤쪽에 공간이나 마당이 있을 때 길합니다.<br>
+            • <strong>상산하자 (上山下水)</strong>: 산성이 물로 가고 향성이 산으로 가 기운이 어긋난 격국으로, 인테리어 비보(보완)가 필요한 형태입니다.</p>
+          </div>
+        </div>
+
+        <!-- 탭 4: 센서 & GPS 연동 팁 -->
+        <div class="tab-content" id="tab-sensor" style="display: none;">
+          <div class="guide-section">
+            <h3>⚙️ 하드웨어 센서 연동 안내 및 팁</h3>
+            
+            <div class="callout-box">
+              <strong>보안 정책(HTTPS) 필수 안내:</strong><br>
+              스마트폰의 Safari나 Chrome 브라우저는 개인정보 보호 정책상 <strong>HTTPS</strong> 보안 연결 또는 <strong>localhost</strong>에서만 실제 나침반 및 GPS 하드웨어 접근을 허용합니다.
+            </div>
+
+            <p style="margin-top:10px;"><strong>Q. 나침반 버튼을 눌러도 반응이 없거나 오류가 나나요?</strong><br>
+            • <strong>아이폰/아이패드 (Safari)</strong>: 애플 정책상 버튼을 눌렀을 때 나타나는 <em>'동작 및 방향 센서 접근 권한'</em> 팝업에서 [허용]을 눌러야 작동합니다.<br>
+            • <strong>안드로이드 (Chrome)</strong>: 설정에서 '사이트 권한 $\rightarrow$ 모션 센서'가 허용되어 있는지 확인하세요.<br>
+            • <strong>PC 데스크톱 환경</strong>: 자이로 센서가 없으므로 자동으로 수동 모드가 지원됩니다. 상단 슬라이더나 마우스로 각도를 조정하시면 100% 동일하게 모든 비성반 연산이 작동합니다.</p>
+
+            <p><strong>Q. 나침반 각도가 가끔 엉뚱하게 튑니다.</strong><br>
+            스마트폰의 전자 나침반은 주변 철제 가구, 모니터, 스피커의 자석에 매우 민감합니다. 실내에서 측정할 때는 주변 금속에서 떨어져서 기기를 공중에서 8자 모양으로 한두 번 천천히 돌려(나침반 보정) 측정하세요.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. 24산, 삼원룡, 낙서궤적 데이터
+       ========================================================================= */
+    const TWENTY_FOUR_MOUNTAINS = [
+      { name: '子', kr: '자', hanja: '子', deg: 0,   palace: 1, dragon: '천', polar: '-' },
+      { name: '癸', kr: '계', hanja: '癸', deg: 15,  palace: 1, dragon: '인', polar: '-' },
+      { name: '丑', kr: '축', hanja: '丑', deg: 30,  palace: 8, dragon: '지', polar: '-' },
+      { name: '艮', kr: '간', hanja: '艮', deg: 45,  palace: 8, dragon: '천', polar: '+' },
+      { name: '寅', kr: '인', hanja: '寅', deg: 60,  palace: 8, dragon: '인', polar: '+' },
+      { name: '甲', kr: '갑', hanja: '甲', deg: 75,  palace: 3, dragon: '지', polar: '+' },
+      { name: '卯', kr: '묘', hanja: '卯', deg: 90,  palace: 3, dragon: '천', polar: '-' },
+      { name: '乙', kr: '을', hanja: '乙', deg: 105, palace: 3, dragon: '인', polar: '-' },
+      { name: '辰', kr: '진', hanja: '辰', deg: 120, palace: 4, dragon: '지', polar: '-' },
+      { name: '巽', kr: '손', hanja: '巽', deg: 135, palace: 4, dragon: '천', polar: '+' },
+      { name: '巳', kr: '사', hanja: '巳', deg: 150, palace: 4, dragon: '인', polar: '+' },
+      { name: '丙', kr: '병', hanja: '丙', deg: 165, palace: 9, dragon: '지', polar: '+' },
+      { name: '午', kr: '오', hanja: '午', deg: 180, palace: 9, dragon: '천', polar: '-' },
+      { name: '丁', kr: '정', hanja: '丁', deg: 195, palace: 9, dragon: '인', polar: '-' },
+      { name: '未', kr: '미', hanja: '未', deg: 210, palace: 2, dragon: '지', polar: '-' },
+      { name: '坤', kr: '곤', hanja: '坤', deg: 225, palace: 2, dragon: '천', polar: '+' },
+      { name: '申', kr: '신', hanja: '申', deg: 240, palace: 2, dragon: '인', polar: '+' },
+      { name: '庚', kr: '경', hanja: '庚', deg: 255, palace: 7, dragon: '지', polar: '+' },
+      { name: '酉', kr: '유', hanja: '酉', deg: 270, palace: 7, dragon: '천', polar: '-' },
+      { name: '辛', kr: '신', hanja: '辛', deg: 285, palace: 7, dragon: '인', polar: '-' },
+      { name: '戌', kr: '술', hanja: '戌', deg: 300, palace: 6, dragon: '지', polar: '-' },
+      { name: '乾', kr: '건', hanja: '乾', deg: 315, palace: 6, dragon: '천', polar: '+' },
+      { name: '亥', kr: '해', hanja: '亥', deg: 330, palace: 6, dragon: '인', polar: '+' },
+      { name: '壬', kr: '임', hanja: '壬', deg: 345, palace: 1, dragon: '지', polar: '+' },
+    ];
+
+    const PALACE_DRAGON_MAP = {
+      1: { name: '감', hanja: '坎', dir: '북',   지: { name: '壬', kr: '임', polar: '+' }, 천: { name: '子', kr: '자', polar: '-' }, 인: { name: '癸', kr: '계', polar: '-' } },
+      2: { name: '곤', hanja: '坤', dir: '서남', 지: { name: '未', kr: '미', polar: '-' }, 천: { name: '坤', kr: '곤', polar: '+' }, 인: { name: '申', kr: '신', polar: '+' } },
+      3: { name: '진', hanja: '震', dir: '동',   지: { name: '甲', kr: '갑', polar: '+' }, 천: { name: '卯', kr: '묘', polar: '-' }, 인: { name: '乙', kr: '을', polar: '-' } },
+      4: { name: '손', hanja: '巽', dir: '동남', 지: { name: '辰', kr: '진', polar: '-' }, 천: { name: '巽', kr: '손', polar: '+' }, 인: { name: '巳', kr: '사', polar: '+' } },
+      6: { name: '건', hanja: '乾', dir: '서북', 지: { name: '戌', kr: '술', polar: '-' }, 천: { name: '乾', kr: '건', polar: '+' }, 인: { name: '亥', kr: '해', polar: '+' } },
+      7: { name: '태', hanja: '兌', dir: '서',   지: { name: '庚', kr: '경', polar: '+' }, 천: { name: '酉', kr: '유', polar: '-' }, 인: { name: '辛', kr: '신', polar: '-' } },
+      8: { name: '간', hanja: '艮', dir: '동북', 지: { name: '丑', kr: '축', polar: '-' }, 천: { name: '艮', kr: '간', polar: '+' }, 인: { name: '寅', kr: '인', polar: '+' } },
+      9: { name: '이', hanja: '離', dir: '남',   지: { name: '丙', kr: '병', polar: '+' }, 천: { name: '午', kr: '오', polar: '-' }, 인: { name: '丁', kr: '정', polar: '-' } },
+    };
+
+    const LUO_SHU_ORDER = [5, 6, 7, 8, 9, 1, 2, 3, 4];
+
+    const GRID_POSITIONS = [
+      { palace: 4, name: '손궁 · 동남', r: 0, c: 0 },
+      { palace: 9, name: '이궁 · 남',   r: 0, c: 1 },
+      { palace: 2, name: '곤궁 · 서남', r: 0, c: 2 },
+      { palace: 3, name: '진궁 · 동',   r: 1, c: 0 },
+      { palace: 5, name: '중궁 · 중앙', r: 1, c: 1 },
+      { palace: 7, name: '태궁 · 서',   r: 1, c: 2 },
+      { palace: 8, name: '간궁 · 동북', r: 2, c: 0 },
+      { palace: 1, name: '감궁 · 북',   r: 2, c: 1 },
+      { palace: 6, name: '건궁 · 서북', r: 2, c: 2 },
+    ];
+
+    /* =========================================================================
+       2. 상태 관리
+       ========================================================================= */
+    const state = {
+      currentPeriod: 9,
+      currentDegree: 66.0,
+      isLocked: false,
+      sensorActive: false,
+      gpsActive: false,
+      swapMode: false,
+      lat: null,
+      lng: null,
+      accuracy: null
+    };
+
+    function normalizeDegree(deg) {
+      let d = deg % 360;
+      if (d < 0) d += 360;
+      return d;
+    }
+
+    function getMountainByDegree(deg) {
+      const d = normalizeDegree(deg);
+      for (const m of TWENTY_FOUR_MOUNTAINS) {
+        let diff = Math.abs(d - m.deg);
+        if (diff > 180) diff = 360 - diff;
+        if (diff <= 7.5) {
+          return m;
+        }
+      }
+      return TWENTY_FOUR_MOUNTAINS[0];
+    }
+
+    /* =========================================================================
+       3. 비성반 계산 엔진
+       ========================================================================= */
+    function calculateFlyingStar(period, facingMtn, sittingMtn) {
+      const periodMap = {};
+      LUO_SHU_ORDER.forEach((palace, idx) => {
+        let val = (period + idx - 1) % 9 + 1;
+        periodMap[palace] = val;
+      });
+
+      const sittingPalace = sittingMtn.palace;
+      const mountainCenterVal = periodMap[sittingPalace];
+      
+      let mountainPolar = '+';
+      let mountainDescInfo = '';
+      const dragonName = sittingMtn.dragon === '지' ? '지원룡' : (sittingMtn.dragon === '천' ? '천원룡' : '인원룡');
+
+      if (mountainCenterVal === 5) {
+        mountainPolar = sittingMtn.polar;
+        mountainDescInfo = `좌산 ${sittingMtn.kr}(${sittingMtn.hanja}): 운반에서 5를 취함; 중궁은 본궁이 없으므로 본래 좌산 ${sittingMtn.kr}(${sittingMtn.polar === '+' ? '양' : '음'})을 따라 ${mountainPolar === '+' ? '순비(순방향)' : '역비(역방향)'}합니다.`;
+      } else {
+        const rootPalace = PALACE_DRAGON_MAP[mountainCenterVal];
+        const targetDragonMtn = rootPalace[sittingMtn.dragon];
+        mountainPolar = targetDragonMtn.polar;
+        mountainDescInfo = `좌산 ${sittingMtn.kr}(${sittingMtn.hanja}): 운반에서 ${mountainCenterVal}을 취함; ${dragonName}에서 ${targetDragonMtn.kr}(${targetDragonMtn.name}, ${mountainPolar === '+' ? '양' : '음'})을 취하므로 원래 별 그대로 ${mountainPolar === '+' ? '순비(순방향)' : '역비(역방향)'} 배치합니다.`;
+      }
+
+      const mountainMap = {};
+      LUO_SHU_ORDER.forEach((palace, idx) => {
+        let val;
+        if (mountainPolar === '+') {
+          val = (mountainCenterVal + idx - 1) % 9 + 1;
+        } else {
+          val = (mountainCenterVal - idx - 1) % 9;
+          if (val < 0) val += 9;
+          val += 1;
+        }
+        mountainMap[palace] = val;
+      });
+
+      const facingPalace = facingMtn.palace;
+      const facingCenterVal = periodMap[facingPalace];
+
+      let facingPolar = '+';
+      let facingDescInfo = '';
+      const facingDragonName = facingMtn.dragon === '지' ? '지원룡' : (facingMtn.dragon === '천' ? '천원룡' : '인원룡');
+
+      if (facingCenterVal === 5) {
+        facingPolar = facingMtn.polar;
+        facingDescInfo = `향수 ${facingMtn.kr}(${facingMtn.hanja}): 운반에서 5를 취함; 중궁은 본궁이 없으므로 본래 향 ${facingMtn.kr}(${facingMtn.polar === '+' ? '양' : '음'})을 따라 ${facingPolar === '+' ? '순비(순방향)' : '역비(역방향)'}합니다.`;
+      } else {
+        const rootPalace = PALACE_DRAGON_MAP[facingCenterVal];
+        const targetDragonMtn = rootPalace[facingMtn.dragon];
+        facingPolar = targetDragonMtn.polar;
+        facingDescInfo = `향수 ${facingMtn.kr}(${facingMtn.hanja}): 운반에서 ${facingCenterVal}을 취함; ${facingDragonName}에서 ${targetDragonMtn.kr}(${targetDragonMtn.name}, ${facingPolar === '+' ? '양' : '음'})을 취하므로 원래 별 그대로 ${facingPolar === '+' ? '역비(역방향)' : '순비(순방향)'} 배치합니다.`;
+      }
+
+      const facingMap = {};
+      LUO_SHU_ORDER.forEach((palace, idx) => {
+        let val;
+        if (facingPolar === '+') {
+          val = (facingCenterVal + idx - 1) % 9 + 1;
+        } else {
+          val = (facingCenterVal - idx - 1) % 9;
+          if (val < 0) val += 9;
+          val += 1;
+        }
+        facingMap[palace] = val;
+      });
+
+      return {
+        periodMap,
+        mountainMap,
+        facingMap,
+        mountainFlight: {
+          title: `${mountainCenterVal} 입궁 · ${mountainPolar === '+' ? '순비 (순방향)' : '역비 (역방향)'}`,
+          desc: mountainDescInfo
+        },
+        facingFlight: {
+          title: `${facingCenterVal} 입궁 · ${facingPolar === '+' ? '순비 (순방향)' : '역비 (역방향)'}`,
+          desc: facingDescInfo
+        }
+      };
+    }
+
+    /* =========================================================================
+       4. SVG 다이얼 렌더링
+       ========================================================================= */
+    function renderDialSvg() {
+      const gTicks = document.getElementById('dialTicks');
+      const gLabels = document.getElementById('dialLabels');
+
+      gTicks.innerHTML = '';
+      gLabels.innerHTML = '';
+
+      TWENTY_FOUR_MOUNTAINS.forEach((m) => {
+        const angle = m.deg;
+        const rad = (angle - 90) * (Math.PI / 180);
+
+        const borderAngle = angle - 7.5;
+        const bRad = (borderAngle - 90) * (Math.PI / 180);
+        const x1 = Math.cos(bRad) * 115;
+        const y1 = Math.sin(bRad) * 115;
+        const x2 = Math.cos(bRad) * 195;
+        const y2 = Math.sin(bRad) * 195;
+
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke', '#1d323d');
+        line.setAttribute('stroke-width', '1');
+        gTicks.appendChild(line);
+
+        const lx = Math.cos(rad) * 140;
+        const ly = Math.sin(rad) * 140;
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', lx);
+        text.setAttribute('y', ly + 4);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.setAttribute('fill', m.polar === '+' ? '#1ec997' : '#94a3b8');
+        text.setAttribute('font-size', '12');
+        text.setAttribute('font-weight', '700');
+        text.setAttribute('transform', `rotate(${angle}, ${lx}, ${ly})`);
+        text.textContent = `${m.kr}`;
+        gLabels.appendChild(text);
+
+        const tickX1 = Math.cos(rad) * 185;
+        const tickY1 = Math.sin(rad) * 185;
+        const tickX2 = Math.cos(rad) * 195;
+        const tickY2 = Math.sin(rad) * 195;
+
+        const tickLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tickLine.setAttribute('x1', tickX1);
+        tickLine.setAttribute('y1', tickY1);
+        tickLine.setAttribute('x2', tickX2);
+        tickLine.setAttribute('y2', tickY2);
+        tickLine.setAttribute('stroke', '#334e5c');
+        tickLine.setAttribute('stroke-width', '1.5');
+        gTicks.appendChild(tickLine);
+      });
+    }
+
+    /* =========================================================================
+       5. UI 렌더링 업데이트
+       ========================================================================= */
+    function updateUI() {
+      const deg = state.currentDegree;
+      
+      const compassSvg = document.getElementById('compassSvg');
+      compassSvg.style.transform = `rotate(${-deg}deg)`;
+
+      document.getElementById('centerDegree').textContent = Math.round(deg);
+      document.getElementById('angleSlider').value = deg;
+      document.getElementById('sliderValDisplay').textContent = deg.toFixed(1) + '°';
+
+      let facingMtn = getMountainByDegree(deg);
+      let sittingMtn = getMountainByDegree(deg + 180);
+
+      if (state.swapMode) {
+        const temp = facingMtn;
+        facingMtn = sittingMtn;
+        sittingMtn = temp;
+      }
+
+      document.getElementById('sittingMountainText').textContent = `${sittingMtn.kr}(${sittingMtn.hanja})`;
+      document.getElementById('facingMountainText').textContent = `${facingMtn.kr}(${facingMtn.hanja})`;
+
+      document.getElementById('chartSummarySubtitle').textContent = 
+        `${sittingMtn.kr}산${facingMtn.kr}향(${sittingMtn.hanja}山${facingMtn.hanja}向) · 제${state.currentPeriod}운 · 정향하괘`;
+
+      const result = calculateFlyingStar(state.currentPeriod, facingMtn, sittingMtn);
+
+      const gridContainer = document.getElementById('ninePalaceGrid');
+      gridContainer.innerHTML = '';
+
+      GRID_POSITIONS.forEach(pos => {
+        const cell = document.createElement('div');
+        cell.className = 'palace-cell';
+        
+        if (pos.palace === facingMtn.palace) {
+          cell.classList.add('highlight-facing');
+        }
+
+        const mountainNum = result.mountainMap[pos.palace];
+        const facingNum = result.facingMap[pos.palace];
+        const periodNum = result.periodMap[pos.palace];
+        const isKing = (periodNum === state.currentPeriod);
+
+        cell.innerHTML = `
+          <div class="star-pair-row">
+            <span class="mountain-star">${mountainNum}</span>
+            <span class="facing-star" style="${facingNum === state.currentPeriod ? 'color: var(--amber-accent);' : ''}">${facingNum}</span>
+          </div>
+          <div class="period-star ${isKing ? 'king-star' : ''}">${periodNum}</div>
+          <div class="palace-meta">
+            <span>${pos.name}</span>
+          </div>
+          ${pos.palace === facingMtn.palace ? '<div class="facing-badge">향(向)</div>' : ''}
+        `;
+        gridContainer.appendChild(cell);
+      });
+
+      document.getElementById('mountainFlyTitle').textContent = result.mountainFlight.title;
+      document.getElementById('mountainFlyDesc').textContent = result.mountainFlight.desc;
+      document.getElementById('facingFlyTitle').textContent = result.facingFlight.title;
+      document.getElementById('facingFlyDesc').textContent = result.facingFlight.desc;
+    }
+
+    /* =========================================================================
+       6. 센서 및 GPS 연동
+       ========================================================================= */
+    async function initOrientationSensor() {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const permission = await DeviceOrientationEvent.requestPermission();
+          if (permission === 'granted') {
+            startOrientationListener();
+            return true;
+          } else {
+            alert('나침반 센서 접근 권한이 거부되었습니다. 수동 슬라이더 모드를 이용하세요.');
+            return false;
+          }
+        } catch (err) {
+          console.error(err);
+          alert('센서 권한 요청 오류: ' + err.message);
+          return false;
+        }
+      } else if ('ondeviceorientationabsolute' in window) {
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+        markSensorActive();
+        return true;
+      } else if ('ondeviceorientation' in window) {
+        window.addEventListener('deviceorientation', handleOrientation, true);
+        markSensorActive();
+        return true;
+      } else {
+        alert('현재 기기에서는 나침반 센서를 지원하지 않습니다. 수동 슬라이더를 사용하세요.');
+        return false;
+      }
+    }
+
+    function startOrientationListener() {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+      markSensorActive();
+    }
+
+    function markSensorActive() {
+      state.sensorActive = true;
+      document.getElementById('sensorDot').classList.add('active');
+      document.getElementById('sensorStatusText').textContent = '실시간 감측 중';
+      document.getElementById('btnSensorLabel').textContent = '센서 감측 중단';
+      document.getElementById('btnToggleSensor').classList.add('active');
+    }
+
+    function markSensorInactive() {
+      state.sensorActive = false;
+      window.removeEventListener('deviceorientation', handleOrientation, true);
+      window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
+      document.getElementById('sensorDot').classList.remove('active');
+      document.getElementById('sensorStatusText').textContent = '센서 대기 (수동 모드)';
+      document.getElementById('btnSensorLabel').textContent = '나침반 센서 활성화';
+      document.getElementById('btnToggleSensor').classList.remove('active');
+    }
+
+    let lastHeading = null;
+    function handleOrientation(event) {
+      if (state.isLocked) return;
+
+      let heading = null;
+
+      if (typeof event.webkitCompassHeading !== 'undefined') {
+        heading = event.webkitCompassHeading;
+      } else if (event.alpha !== null) {
+        heading = 360 - event.alpha;
+      }
+
+      if (heading !== null && !isNaN(heading)) {
+        heading = normalizeDegree(heading);
+        if (lastHeading === null) {
+          lastHeading = heading;
+        } else {
+          let diff = heading - lastHeading;
+          if (diff > 180) diff -= 360;
+          if (diff < -180) diff += 360;
+          lastHeading = normalizeDegree(lastHeading + diff * 0.35);
+        }
+
+        state.currentDegree = lastHeading;
+        updateUI();
+      }
+    }
+
+    function initGPS() {
+      if (!('geolocation' in navigator)) {
+        document.getElementById('gpsStatusText').textContent = 'GPS 미지원';
+        return;
+      }
+
+      navigator.geolocation.watchPosition(
+        (pos) => {
+          state.gpsActive = true;
+          state.lat = pos.coords.latitude;
+          state.lng = pos.coords.longitude;
+          state.accuracy = pos.coords.accuracy;
+
+          document.getElementById('gpsDot').classList.add('active');
+          document.getElementById('gpsStatusText').textContent = 'GPS 연동됨';
+          document.getElementById('gpsLat').textContent = state.lat.toFixed(5) + '°';
+          document.getElementById('gpsLng').textContent = state.lng.toFixed(5) + '°';
+          document.getElementById('gpsAcc').textContent = '±' + Math.round(state.accuracy) + 'm';
+        },
+        (err) => {
+          console.warn('GPS Error:', err.message);
+          document.getElementById('gpsStatusText').textContent = 'GPS 권한 대기';
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    /* =========================================================================
+       7. 이벤트 바인딩 & 가이드 모달 제어
+       ========================================================================= */
+    function initEventHandlers() {
+      // 센서 토글
+      const btnToggle = document.getElementById('btnToggleSensor');
+      btnToggle.addEventListener('click', async () => {
+        if (state.sensorActive) {
+          markSensorInactive();
+        } else {
+          await initOrientationSensor();
+        }
+      });
+
+      // 각도 고정
+      const btnLock = document.getElementById('btnLockAngle');
+      btnLock.addEventListener('click', () => {
+        state.isLocked = !state.isLocked;
+        if (state.isLocked) {
+          btnLock.classList.add('active');
+          document.getElementById('lockBtnText').textContent = '각도 고정 해제';
+        } else {
+          btnLock.classList.remove('active');
+          document.getElementById('lockBtnText').textContent = '현재 각도 고정';
+        }
+      });
+
+      // 좌향 맞바꾸기
+      const btnSwap = document.getElementById('btnSwapSittingFacing');
+      btnSwap.addEventListener('click', () => {
+        state.swapMode = !state.swapMode;
+        updateUI();
+      });
+
+      // 수동 각도 슬라이더
+      const slider = document.getElementById('angleSlider');
+      slider.addEventListener('input', (e) => {
+        state.currentDegree = parseFloat(e.target.value);
+        updateUI();
+      });
+
+      // 운 선택 탭
+      const periodTabs = document.querySelectorAll('#periodTabs .tab-btn');
+      periodTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          periodTabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          state.currentPeriod = parseInt(tab.dataset.period, 10);
+          
+          document.getElementById('bannerPeriodText').textContent = '제' + state.currentPeriod + '운';
+          if (state.currentPeriod === 9) {
+            document.getElementById('bannerPeriodYears').textContent = '2024년 ~ 2043년';
+          } else if (state.currentPeriod === 8) {
+            document.getElementById('bannerPeriodYears').textContent = '2004년 ~ 2023년';
+          } else if (state.currentPeriod === 7) {
+            document.getElementById('bannerPeriodYears').textContent = '1984년 ~ 2003년';
+          }
+          updateUI();
+        });
+      });
+
+      // 가이드 모달 제어
+      const modal = document.getElementById('guideModal');
+      const btnOpenGuide = document.getElementById('btnOpenGuide');
+      const btnCloseGuide = document.getElementById('btnCloseGuide');
+
+      function openModal() {
+        modal.classList.add('show');
+      }
+      function closeModal() {
+        modal.classList.remove('show');
+      }
+
+      btnOpenGuide.addEventListener('click', openModal);
+      btnCloseGuide.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+      });
+
+      // 모달 내부 탭 전환
+      const modalTabs = document.querySelectorAll('.modal-tab-btn');
+      const tabContents = document.querySelectorAll('.modal-body .tab-content');
+
+      modalTabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+          modalTabs.forEach(b => b.classList.remove('active'));
+          tabContents.forEach(c => c.style.display = 'none');
+
+          btn.classList.add('active');
+          const targetId = btn.dataset.tab;
+          const targetContent = document.getElementById(targetId);
+          if (targetContent) {
+            targetContent.style.display = 'block';
+          }
+        });
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderDialSvg();
+      updateUI();
+      initEventHandlers();
+      initGPS();
+    });
+  </script>
+</body>
+</html>
