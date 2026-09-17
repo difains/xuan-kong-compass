@@ -1,2 +1,10 @@
-# xuan-kong-compass
-현공풍수 실시간 나경 &amp; 비성반 계산기 (Xuan Kong Flying Star Compass Web App)
+# 현공풍수 실시간 나경 & 비성반 계산기 (Xuan Kong Compass & Flying Star)
+
+스마트폰 및 태블릿의 실제 방향 센서(나침반)와 GPS를 활용해 건물의 좌향을 실시간 감측하고, 제9운(2024~2043) 비성반(3×3 구궁도)을 자동으로 도출하는 웹 애플리케이션입니다.
+
+## 주요 기능
+- **24산 실시간 디지털 나경**: 壬子癸 丑艮寅 甲卯乙 辰巽巳 丙午丁 未坤申 庚酉辛 戌乾亥 24산 원반 회전 및 좌향(坐山/向首) 판정
+- **실시간 센서 연동**: iOS Safari `DeviceOrientationEvent.requestPermission` 및 Android `deviceorientationabsolute` 지원
+- **GPS 위치 연동**: `navigator.geolocation` 기반 위도, 경도, 정밀도 실시간 감측
+- **3×3 구궁 비성반 계산 엔진**: 1~9운 선택, 24산 천/지/인 삼원룡 및 음양 순역비(順逆飛) 100% 자동 연산
+- **상세 가이드 모달**: 비성반 숫자(산성·향성·운성) 해석, 9운 시대 길흉/격국 풀이, 현장 측정 5단계 순서 탑재
